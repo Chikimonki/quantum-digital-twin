@@ -1,3 +1,5 @@
+⚛️ QUANTUM SIMULATOR IS LIVE!
+https://storage.googleapis.com/groq-chat-api-quantum-twin-ui/index.html
 # quantum-digital-twin
 Using the latest Polyglot method I took an idea and turned it into a reproducible, modular, and faster than the conventional approach quantum digital twin. It’s a paradigm shift in how quickly one can prototype quantum‑AI workflows.
 # Quantum Digital Twin with Zig + Julia + LuaJIT
