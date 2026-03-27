@@ -15,6 +15,33 @@ It uses:
 
 The surrogate achieves ~7× speedup (inference vs. simulation) and accurately predicts the final state probability, enabling rapid design space exploration.
 
+Here's a Cheat Sheet:
+
+SLIDER EFFECTS:
+═══════════════════════════════════════
+
+Omega (ω) = How HARD you push the qubit
+  ↑ High omega = Fast oscillations
+  ↓ Low omega  = Slow, gentle changes
+
+Delta (Δ) = How "off-tune" the drive is
+  = 0: Perfect resonance (maximum effect)
+  ≠ 0: Detuned (qubit resists changing)
+
+Time = How LONG you apply the drive
+  Short: Qubit barely moves
+  Long:  Multiple oscillations
+
+GATES:
+═══════════════════════════════════════
+
+X = Flip the qubit (|0⟩ → |1⟩)
+H = Superposition (50/50)
+Z = Phase flip (invisible but real!)
+S = Quarter turn
+T = Eighth turn (the "magic" gate)
+
+
 ## Requirements
 
 - Zig (0.13 or later)
