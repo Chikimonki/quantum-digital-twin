@@ -80,4 +80,125 @@ export fn qubit_evolve_for(state: *State, params: *Params, dt: f64, total_time: 
         qubit_evolve(state, params, step);
         t += step;
     }
+
+// ============================================
+// NEW: Quantum Gate Operations
+// ============================================
+
+// Pauli-X gate (NOT gate / bit flip)
+export fn qubit_gate_x(state: *State) void {
+    const tmp = state.alpha;
+    state.alpha = state.beta;
+    state.beta = tmp;
+}
+
+// Pauli-Z gate (phase flip)
+export fn qubit_gate_z(state: *State) void {
+    state.beta.re = -state.beta.re;
+    state.beta.im = -state.beta.im;
+}
+
+// Hadamard gate (superposition)
+export fn qubit_gate_h(state: *State) void {
+    const inv_sqrt2: f64 = 0.7071067811865476;
+    const new_alpha = Complex{
+        .re = inv_sqrt2 * (state.alpha.re + state.beta.re),
+        .im = inv_sqrt2 * (state.alpha.im + state.beta.im),
+    };
+    const new_beta = Complex{
+        .re = inv_sqrt2 * (state.alpha.re - state.beta.re),
+        .im = inv_sqrt2 * (state.alpha.im - state.beta.im),
+    };
+    state.alpha = new_alpha;
+    state.beta = new_beta;
+}
+
+// Phase gate (S gate)
+export fn qubit_gate_s(state: *State) void {
+    const tmp_re = state.beta.re;
+    state.beta.re = -state.beta.im;
+    state.beta.im = tmp_re;
+}
+
+// T gate (pi/8 gate)
+export fn qubit_gate_t(state: *State) void {
+    const cos_pi8: f64 = 0.9238795325112867;
+    const sin_pi8: f64 = 0.3826834323650898;
+    const new_re = cos_pi8 * state.beta.re - sin_pi8 * state.beta.im;
+    const new_im = sin_pi8 * state.beta.re + cos_pi8 * state.beta.im;
+    state.beta.re = new_re;
+    state.beta.im = new_im;
+}
+
+// Rotation around X axis by angle theta
+export fn qubit_rotate_x(state: *State, theta: f64) void {
+    const cos_t = @cos(theta / 2.0);
+    const sin_t = @sin(theta / 2.0);
+    const new_alpha = Complex{
+        .re = cos_t * state.alpha.re + sin_t * state.beta.im,
+        .im = cos_t * state.alpha.im - sin_t * state.beta.re,
+    };
+    const new_beta = Complex{
+        .re = sin_t * state.alpha.im + cos_t * state.beta.re,
+        .im = -sin_t * state.alpha.re + cos_t * state.beta.im,
+    };
+    state.alpha = new_alpha;
+    state.beta = new_beta;
+}
+
+// Get probability of measuring |0>
+export fn qubit_prob_zero(state: *State) f64 {
+    return state.alpha.re * state.alpha.re + state.alpha.im * state.alpha.im;
+}
+
+// Get Bloch sphere coordinates
+export fn qubit_bloch_x(state: *State) f64 {
+    // <X> = 2*Re(alpha* . beta)
+    return 2.0 * (state.alpha.re * state.beta.re + state.alpha.im * state.beta.im);
+}
+
+export fn qubit_bloch_y(state: *State) f64 {
+    // <Y> = 2*Im(alpha* . beta)
+    return 2.0 * (state.alpha.re * state.beta.im - state.alpha.im * state.beta.re);
+}
+
+export fn qubit_bloch_z(state: *State) f64 {
+    // <Z> = |alpha|^2 - |beta|^2
+    const p0 = state.alpha.re * state.alpha.re + state.alpha.im * state.alpha.im;
+    const p1 = state.beta.re * state.beta.re + state.beta.im * state.beta.im;
+    return p0 - p1;
+}
+
+// Apply noise (T1 relaxation - amplitude damping)
+export fn qubit_apply_noise(state: *State, t1_decay: f64) void {
+    // Simple amplitude damping model
+    const decay = @exp(-t1_decay);
+    state.beta.re *= decay;
+    state.beta.im *= decay;
+    // Renormalize
+    const norm = @sqrt(state.alpha.re * state.alpha.re +
+                       state.alpha.im * state.alpha.im +
+                       state.beta.re * state.beta.re +
+                       state.beta.im * state.beta.im);
+    if (norm > 1e-12) {
+        state.alpha.re /= norm;
+        state.alpha.im /= norm;
+        state.beta.re /= norm;
+        state.beta.im /= norm;
+    }
+}
+
+// Run a gate sequence: 0=X, 1=Z, 2=H, 3=S, 4=T
+export fn qubit_run_circuit(state: *State, gates: [*]const u8, num_gates: usize) void {
+    for (0..num_gates) |i| {
+        switch (gates[i]) {
+            0 => qubit_gate_x(state),
+            1 => qubit_gate_z(state),
+            2 => qubit_gate_h(state),
+            3 => qubit_gate_s(state),
+            4 => qubit_gate_t(state),
+            else => {},
+        }
+    }
+}    
 }
