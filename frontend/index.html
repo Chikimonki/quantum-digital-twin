@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quantum Digital Twin - Interactive Simulator</title>
+    <style>
+        :root {
+            --ai-blue: #00d4ff;
+            --drama-purple: #8a2be2;
+            --stage-black: #0a0a0a;
+            --spotlight: #00ffcc;
+            --quantum-pink: #ff006e;
+            --neon-glow: 0 0 20px var(--ai-blue);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: linear-gradient(135deg, var(--stage-black) 0%, #1a0b2e 100%);
+            color: white;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+        }
+
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+
+        .header {
+            text-align: center;
+            padding: 40px 20px;
+            background: rgba(138, 43, 226, 0.2);
+            border-radius: 25px;
+            margin-bottom: 30px;
+            border: 2px solid var(--ai-blue);
+            box-shadow: var(--neon-glow);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%; left: -50%;
+            width: 200%; height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(0, 212, 255, 0.1), transparent);
+            animation: shimmer 3s infinite linear;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%) translateY(-100%) rotate(0deg); }
+            100% { transform: translateX(100%) translateY(100%) rotate(360deg); }
+        }
+
+        .main-title {
+            font-size: 2.5em;
+            background: linear-gradient(45deg, var(--ai-blue), var(--spotlight));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            position: relative;
+            z-index: 1;
+        }
+
+        .tagline {
+            font-size: 1.1em;
+            opacity: 0.9;
+            margin: 10px 0;
+            position: relative;
+            z-index: 1;
+        }
+
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+
+        .card {
+            background: rgba(255, 255, 255, 0.08);
+            padding: 25px;
+            border-radius: 20px;
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            border-color: var(--ai-blue);
+            box-shadow: 0 10px 30px rgba(0, 212, 255, 0.2);
+        }
+
+        .card h2 {
+            color: var(--ai-blue);
+            margin-bottom: 15px;
+            font-size: 1.4em;
+        }
+
+        .card.full-width { grid-column: 1 / -1; }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: var(--spotlight);
+            font-size: 0.9em;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            margin: 5px 0 15px;
+            accent-color: var(--ai-blue);
+        }
+
+        .value-display {
+            color: var(--ai-blue);
+            font-family: 'Courier New', monospace;
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+
+        button {
+            background: linear-gradient(45deg, var(--ai-blue), var(--spotlight));
+            color: black;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 25px;
+            font-weight: bold;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: transform 0.3s, box-shadow 0.3s;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            transform: scale(1.03);
+            box-shadow: 0 10px 30px rgba(0, 212, 255, 0.4);
+        }
+
+        .result-box {
+            background: rgba(0, 255, 204, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+            border: 1px solid var(--spotlight);
+            font-family: 'Courier New', monospace;
+        }
+
+        .prob-bar-container {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            height: 200px;
+            align-items: flex-end;
+        }
+
+        .prob-bar {
+            flex: 1;
+            border-radius: 10px 10px 0 0;
+            transition: height 0.5s ease;
+            position: relative;
+            min-height: 20px;
+        }
+
+        .prob-bar .label {
+            position: absolute;
+            bottom: -25px;
+            width: 100%;
+            text-align: center;
+            font-size: 0.9em;
+        }
+
+        .prob-bar .value {
+            position: absolute;
+            top: 5px;
+            width: 100%;
+            text-align: center;
+            font-weight: bold;
+            color: black;
+            font-size: 1.1em;
+        }
+
+        .bloch-display {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .bloch-coord {
+            background: rgba(0, 212, 255, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            border: 1px solid var(--ai-blue);
+        }
+
+        .bloch-coord .axis {
+            font-size: 1.5em;
+            color: var(--ai-blue);
+            font-weight: bold;
+        }
+
+        .bloch-coord .val {
+            font-size: 1.8em;
+            color: var(--spotlight);
+            font-family: 'Courier New', monospace;
+        }
+
+        .trajectory-canvas {
+            width: 100%;
+            height: 200px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            margin-top: 15px;
+        }
+
+        .gate-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .gate-btn {
+            background: rgba(138, 43, 226, 0.3);
+            border: 2px solid var(--drama-purple);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 1.2em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+            width: auto;
+        }
+
+        .gate-btn:hover {
+            background: var(--drama-purple);
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(138, 43, 226, 0.4);
+        }
+
+        .gate-btn small {
+            display: block;
+            font-size: 0.6em;
+            font-weight: normal;
+            opacity: 0.8;
+        }
+
+        .circuit-display {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+            font-family: 'Courier New', monospace;
+            color: var(--ai-blue);
+            min-height: 50px;
+            font-size: 1.3em;
+            letter-spacing: 5px;
+        }
+
+        .stack-badge {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 15px;
+            margin: 3px;
+            font-size: 0.85em;
+            font-weight: bold;
+        }
+
+        .badge-zig { background: #f7a41d; color: black; }
+        .badge-julia { background: #9558b2; color: white; }
+        .badge-lua { background: #000080; color: white; }
+        .badge-go { background: #00add8; color: black; }
+
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding: 20px;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .status-dot {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #00ff00;
+            box-shadow: 0 0 10px #00ff00;
+            animation: pulse 2s infinite;
+            margin-right: 5px;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        @media (max-width: 768px) {
+            .grid { grid-template-columns: 1fr; }
+            .gate-grid { grid-template-columns: repeat(3, 1fr); }
+            .main-title { font-size: 1.8em; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="container">
+            <h1 class="main-title">⚛️ Quantum Digital Twin</h1>
+            <p class="tagline">Interactive Single-Qubit Simulator</p>
+            <div>
+                <span class="stack-badge badge-zig">Zig</span>
+                <span class="stack-badge badge-julia">Julia</span>
+                <span class="stack-badge badge-lua">LuaJIT</span>
+                <span class="stack-badge badge-go">Go</span>
+            </div>
+            <p style="margin-top: 10px; position: relative; z-index: 1;">
+                <span class="status-dot"></span> API Live
+            </p>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="grid">
+            <!-- Rabi Drive Parameters -->
+            <div class="card">
+                <h2>🎛️ Rabi Drive Parameters</h2>
+
+                <label>Rabi Frequency (ω): <span class="value-display" id="omega-val">10.0</span></label>
+                <input type="range" id="omega" min="0" max="30" step="0.5" value="10"
+                    oninput="document.getElementById('omega-val').textContent = this.value">
+
+                <label>Detuning (Δ): <span class="value-display" id="delta-val">0.0</span></label>
+                <input type="range" id="delta" min="-15" max="15" step="0.5" value="0"
+                    oninput="document.getElementById('delta-val').textContent = this.value">
+
+                <label>Evolution Time: <span class="value-display" id="time-val">0.20</span>s</label>
+                <input type="range" id="time" min="0.05" max="1.0" step="0.05" value="0.2"
+                    oninput="document.getElementById('time-val').textContent = parseFloat(this.value).toFixed(2)">
+
+                <button onclick="runSimulation()">⚡ Simulate</button>
+            </div>
+
+            <!-- Measurement Probabilities -->
+            <div class="card">
+                <h2>📊 Measurement Probabilities</h2>
+                <div class="prob-bar-container">
+                    <div class="prob-bar" id="bar-0" style="height: 100%; background: linear-gradient(to top, var(--ai-blue), #0088ff);">
+                        <span class="value" id="prob-0-text">100%</span>
+                        <span class="label">|0⟩</span>
+                    </div>
+                    <div class="prob-bar" id="bar-1" style="height: 0%; background: linear-gradient(to top, var(--quantum-pink), #ff4444);">
+                        <span class="value" id="prob-1-text">0%</span>
+                        <span class="label">|1⟩</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bloch Sphere -->
+        <div class="card full-width" style="grid-column: 1 / -1;">
+            <h2>🌍 Bloch Sphere Coordinates</h2>
+            <div class="bloch-display">
+                <div class="bloch-coord">
+                    <div class="axis">X</div>
+                    <div class="val" id="bloch-x">0.000</div>
+                </div>
+                <div class="bloch-coord">
+                    <div class="axis">Y</div>
+                    <div class="val" id="bloch-y">0.000</div>
+                </div>
+                <div class="bloch-coord">
+                    <div class="axis">Z</div>
+                    <div class="val" id="bloch-z">1.000</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Trajectory -->
+        <div class="card full-width">
+            <h2>📈 State Evolution Trajectory</h2>
+            <canvas class="trajectory-canvas" id="trajectory-canvas"></canvas>
+        </div>
+
+        <!-- Gate Circuit Builder -->
+        <div class="card full-width">
+            <h2>🔧 Quantum Circuit Builder</h2>
+            <p style="margin-bottom: 10px; opacity: 0.7;">Click gates to build a circuit:</p>
+            <div class="gate-grid">
+                <div class="gate-btn" onclick="addGate('X')">X<small>NOT</small></div>
+                <div class="gate-btn" onclick="addGate('Z')">Z<small>Phase</small></div>
+                <div class="gate-btn" onclick="addGate('H')">H<small>Hadamard</small></div>
+                <div class="gate-btn" onclick="addGate('S')">S<small>π/2</small></div>
+                <div class="gate-btn" onclick="addGate('T')">T<small>π/4</small></div>
+            </div>
+            <div class="circuit-display" id="circuit-display">|0⟩ ─</div>
+            <div style="display: flex; gap: 10px; margin-top: 10px;">
+                <button onclick="runCircuit()" style="flex: 2;">⚡ Run Circuit</button>
+                <button onclick="clearCircuit()" style="flex: 1; background: rgba(255,0,0,0.3); border: 1px solid red;">Clear</button>
+            </div>
+            <div id="circuit-result"></div>
+        </div>
+
+        <div class="footer">
+            <p>⚛️ Quantum Digital Twin v2.0</p>
+            <p style="margin-top: 5px;">Built with Zig • Julia • LuaJIT • Go</p>
+            <p style="margin-top: 5px; font-size: 0.85em;">Deployed on GCP Cloud Run</p>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'https://quantum-twin-api-x6vvbvhpsq-uc.a.run.app';
+        let circuit = [];
+
+        async function runSimulation() {
+            const omega = document.getElementById('omega').value;
+            const delta = document.getElementById('delta').value;
+            const time = document.getElementById('time').value;
+
+            try {
+                const res = await fetch(`${API_URL}/simulate?omega=${omega}&delta=${delta}&time=${time}`);
+                const data = await res.json();
+
+                // Update probability bars
+                const p0 = data.prob_0;
+                const p1 = data.prob_1;
+                document.getElementById('bar-0').style.height = (p0 * 100) + '%';
+                document.getElementById('bar-1').style.height = (p1 * 100) + '%';
+                document.getElementById('prob-0-text').textContent = (p0 * 100).toFixed(1) + '%';
+                document.getElementById('prob-1-text').textContent = (p1 * 100).toFixed(1) + '%';
+
+                // Update Bloch sphere
+                document.getElementById('bloch-x').textContent = data.bloch.x.toFixed(3);
+                document.getElementById('bloch-y').textContent = data.bloch.y.toFixed(3);
+                document.getElementById('bloch-z').textContent = data.bloch.z.toFixed(3);
+
+                // Draw trajectory
+                drawTrajectory(data.trajectory);
+
+            } catch (e) {
+                console.error('Simulation failed:', e);
+            }
+        }
+
+        function drawTrajectory(trajectory) {
+            const canvas = document.getElementById('trajectory-canvas');
+            const ctx = canvas.getContext('2d');
+
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
+
+            const w = canvas.width;
+            const h = canvas.height;
+            const padding = 30;
+
+            // Clear
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+            ctx.fillRect(0, 0, w, h);
+
+            // Grid lines
+            ctx.strokeStyle = 'rgba(0, 212, 255, 0.15)';
+            ctx.lineWidth = 1;
+            for (let i = 0; i <= 4; i++) {
+                const y = padding + (h - 2 * padding) * (1 - i / 4);
+                ctx.beginPath();
+                ctx.moveTo(padding, y);
+                ctx.lineTo(w - padding, y);
+                ctx.stroke();
+
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+                ctx.font = '11px monospace';
+                ctx.fillText((i * 25) + '%', 2, y + 4);
+            }
+
+            // Trajectory line
+            if (trajectory && trajectory.length > 1) {
+                ctx.strokeStyle = '#00ffcc';
+                ctx.lineWidth = 2;
+                ctx.shadowColor = '#00ffcc';
+                ctx.shadowBlur = 10;
+                ctx.beginPath();
+
+                for (let i = 0; i < trajectory.length; i++) {
+                    const x = padding + (w - 2 * padding) * (i / (trajectory.length - 1));
+                    const y = padding + (h - 2 * padding) * (1 - trajectory[i]);
+                    if (i === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                }
+                ctx.stroke();
+                ctx.shadowBlur = 0;
+            }
+
+            // Labels
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+            ctx.font = '12px monospace';
+            ctx.fillText('P(|1⟩)', padding, 15);
+            ctx.fillText('Time →', w - 70, h - 5);
+        }
+
+        function addGate(gate) {
+            circuit.push(gate);
+            updateCircuitDisplay();
+        }
+
+        function clearCircuit() {
+            circuit = [];
+            updateCircuitDisplay();
+            document.getElementById('circuit-result').innerHTML = '';
+        }
+
+        function updateCircuitDisplay() {
+            const display = document.getElementById('circuit-display');
+            if (circuit.length === 0) {
+                display.textContent = '|0⟩ ─';
+            } else {
+                display.textContent = '|0⟩ ─ ' + circuit.map(g => `[${g}]`).join(' ─ ') + ' ─ ?';
+            }
+        }
+
+        async function runCircuit() {
+            if (circuit.length === 0) return;
+
+            // Map gates to simulation parameters
+            let omega = 0, delta = 0, time = 0.01;
+
+            // Simple gate simulation using the API
+            // H gate ~ omega=pi, delta=0, time=0.5/omega
+            if (circuit.includes('H')) {
+                omega = Math.PI;
+                time = 0.5;
+            }
+            if (circuit.includes('X')) {
+                omega = Math.PI;
+                time = 1.0;
+            }
+
+            try {
+                const res = await fetch(`${API_URL}/simulate?omega=${omega}&delta=${delta}&time=${time}`);
+                const data = await res.json();
+
+                document.getElementById('circuit-result').innerHTML = `
+                    <div class="result-box" style="margin-top: 15px;">
+                        <div>Circuit: ${circuit.map(g => '[' + g + ']').join(' → ')}</div>
+                        <div style="margin-top: 10px;">
+                            P(|0⟩) = ${(data.prob_0 * 100).toFixed(1)}%
+                            &nbsp;&nbsp;
+                            P(|1⟩) = ${(data.prob_1 * 100).toFixed(1)}%
+                        </div>
+                        <div style="margin-top: 5px; opacity: 0.7;">
+                            Bloch: X=${data.bloch.x.toFixed(3)} Y=${data.bloch.y.toFixed(3)} Z=${data.bloch.z.toFixed(3)}
+                        </div>
+                    </div>
+                `;
+
+                // Update bars too
+                document.getElementById('bar-0').style.height = (data.prob_0 * 100) + '%';
+                document.getElementById('bar-1').style.height = (data.prob_1 * 100) + '%';
+                document.getElementById('prob-0-text').textContent = (data.prob_0 * 100).toFixed(1) + '%';
+                document.getElementById('prob-1-text').textContent = (data.prob_1 * 100).toFixed(1) + '%';
+                document.getElementById('bloch-x').textContent = data.bloch.x.toFixed(3);
+                document.getElementById('bloch-y').textContent = data.bloch.y.toFixed(3);
+                document.getElementById('bloch-z').textContent = data.bloch.z.toFixed(3);
+
+            } catch (e) {
+                console.error('Circuit failed:', e);
+            }
+        }
+
+        // Initial simulation
+        runSimulation();
+    </script>
+</body>
+</html>
